@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <string.H>
 
-#include "picohttpparser/picohttpparser.h"
+#include "picohttpparser.h"
 
 
 static PyObject* field_name_with_case(const char* name, size_t name_len, int upper)
@@ -260,7 +260,7 @@ static PyMethodDef functions[] = {
 
 static struct PyModuleDef moduledef = {
    PyModuleDef_HEAD_INIT,
-   "pycohttpp",   /* name of module */
+   "pycohttpp.parser",   /* name of module */
    "picohttpparser binding", /* module documentation, may be NULL */
    -1,       /* size of per-interpreter state of the module,
                 or -1 if the module keeps state in global variables. */
@@ -268,7 +268,7 @@ static struct PyModuleDef moduledef = {
 };
 
 PyMODINIT_FUNC
-PyInit_pycohttpp(void)
+PyInit_parser(void)
 {
     return PyModule_Create(&moduledef);
 }

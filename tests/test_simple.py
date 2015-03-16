@@ -1,4 +1,4 @@
-import pycohttpp
+from pycohttpp.parser import parse_headers
 
 
 simple_header = b"""\
@@ -9,7 +9,7 @@ Content-Length: 10\r
 
 
 def test_bytes_bytes():
-    res = pycohttpp.parse_headers(simple_header, 0, 0, 0)
+    res = parse_headers(simple_header, 0, 0, 0)
     print(res)
     assert res is not None
     size, fields = res
@@ -21,7 +21,7 @@ def test_bytes_bytes():
 
 
 def test_asis_latin1():
-    res = pycohttpp.parse_headers(simple_header, 1, 1, 0)
+    res = parse_headers(simple_header, 1, 1, 0)
     print(res)
     assert res is not None
     size, fields = res
@@ -33,7 +33,7 @@ def test_asis_latin1():
 
 
 def test_lower_ascii():
-    res = pycohttpp.parse_headers(simple_header, 2, 2, 0)
+    res = parse_headers(simple_header, 2, 2, 0)
     print(res)
     assert res is not None
     size, fields = res
@@ -45,7 +45,7 @@ def test_lower_ascii():
 
 
 def test_upper_ascii():
-    res = pycohttpp.parse_headers(simple_header, 3, 2, 0)
+    res = parse_headers(simple_header, 3, 2, 0)
     print(res)
     assert res is not None
     size, fields = res
