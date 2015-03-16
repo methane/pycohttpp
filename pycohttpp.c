@@ -58,8 +58,8 @@ decode_field_value_bytes(const struct phr_header *headers, int lines, int total)
     char *data = PyBytes_AS_STRING(value);
     int pos=0;
     for (int i=0; i<lines; i++) {
-        memcpy(data+pos, headers[i].name, headers[i].name_len);
-        pos += headers[i].name_len;
+        memcpy(data+pos, headers[i].value, headers[i].value_len);
+        pos += headers[i].value_len;
     }
     assert(pos == total);
     return value;
@@ -76,8 +76,8 @@ decode_field_value_1byte(const struct phr_header *headers, int lines, int total,
 
     int pos = 0;
     for (int i=0; i<lines; i++) {
-        memcpy(data+pos, headers[i].name, headers[i].name_len);
-        pos += headers[i].name_len;
+        memcpy(data+pos, headers[i].value, headers[i].value_len);
+        pos += headers[i].value_len;
     }
     assert(pos == total);
     return value;
@@ -96,10 +96,10 @@ decode_field_value_surrogate(const struct phr_header *headers, int lines, int to
 
     int pos = 0;
     for (int i=0; i<lines; i++) {
-        const char *name = headers[i].name;
-        int n = headers[i].name_len;
+        const char *cv = headers[i].value;
+        int n = headers[i].value_len;
         for (int j=0; j<n; j++) {
-            int c = (unsigned char)name[j];
+            int c = (unsigned char)cv[j];
             if (c > 127) c |= 0xDC00;
             data[pos++] = c;
         }
@@ -112,19 +112,19 @@ static PyObject*
 decode_field_value(const struct phr_header *headers, int *index, int num_headers, int valuedecode)
 {
     int i = *index;
-    int total=headers[i].name_len;
+    int total=headers[i].value_len;
     int maxchr=0;
 
-    for (int j=0; j < headers[i].name_len; j++) {
-        int c = (unsigned char)headers[i].name[j];
+    for (int j=0; j < headers[i].value_len; j++) {
+        int c = (unsigned char)headers[i].value[j];
         if (c > maxchr) maxchr = c;
     }
 
     // multiline header
     for (i++; i<num_headers && headers[i].name == NULL; i++) {
-        total += headers[i].name_len;
-        for (int j=0; j < headers[i].name_len; j++) {
-            int c = (unsigned char)headers[i].name[j];
+        total += headers[i].value_len;
+        for (int j=0; j < headers[i].value_len; j++) {
+            int c = (unsigned char)headers[i].value[j];
             if (c > maxchr) maxchr = c;
         }
     }
@@ -147,11 +147,12 @@ decode_field_value(const struct phr_header *headers, int *index, int num_headers
             value = decode_field_value_1byte(headers + *index, lines, total, maxchr);
         }
         break;
+    default:
+        PyErr_SetString(PyExc_RuntimeError, "Invalid field name case");
+        return NULL;
     }
     *index = i;
-    assert(false);
-    PyErr_SetString(PyExc_RuntimeError, "Invalid field name case");
-    return NULL;
+    return value;
 }
 
 static const char parse_headers_doc[] = "Parse headers\n\n"
@@ -235,11 +236,16 @@ parse_headers(PyObject *self, PyObject *args)
             Py_DECREF(value);
             goto error;
         }
-        PyTuple_SetItem(t, 0, name);
-        PyTuple_SetItem(t, 1, value);
+        PyTuple_SET_ITEM(t, 0, name);
+        PyTuple_SET_ITEM(t, 1, value);
         PyList_SetItem(pyheaders, ih++, t);
     }
-    return pyheaders;
+
+    PyObject *res = PyTuple_New(2);
+    if (res == NULL) goto error;
+    PyTuple_SetItem(res, 0, PyLong_FromLong(parsed));
+    PyTuple_SetItem(res, 1, pyheaders);
+    return res;
 
 error:
     Py_XDECREF(pyheaders);
@@ -262,7 +268,7 @@ static struct PyModuleDef moduledef = {
 };
 
 PyMODINIT_FUNC
-PyInit_pycohttp(void)
+PyInit_pycohttpp(void)
 {
     return PyModule_Create(&moduledef);
 }
