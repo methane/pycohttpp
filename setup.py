@@ -7,7 +7,7 @@ pycomod = Extension(
     include_dirs=['./picohttpparser'],
 )
 
-setup(name='picohttpp',
+setup(name='pycohttpp',
       version='0.1.dev0',
       description='picohttpparser binding',
       packages=['pycohttpp'],
