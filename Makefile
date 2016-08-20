@@ -1,6 +1,6 @@
 .PHONY: build
 build:
-	python setup.py build_ext
+	python setup.py build_ext -if
 
 .PHONY: test
 test:

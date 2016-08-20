@@ -58,7 +58,7 @@ field_name_wsgi(const char *name, size_t name_len)
             Py_DECREF(pyname);
             return NULL;
         }
-        data[i] = toupper(c);
+        data[i] = c == '-' ? '_' : toupper(c);
     }
     return pyname;
 }
