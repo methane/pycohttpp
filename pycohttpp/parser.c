@@ -2,13 +2,16 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <string.H>
+#include <string.h>
 
 #include "picohttpparser.h"
 
+// TODO: Add request parser and response parser
 
-static PyObject* field_name_with_case(const char* name, size_t name_len, int upper)
+static PyObject*
+field_name_with_case(const char* name, size_t name_len, int upper)
 {
+    // TODO: Cache common http header keys
     PyObject *pyname = PyUnicode_New(name_len, 127);
     if (pyname == NULL)
         return NULL;
@@ -33,6 +36,34 @@ static PyObject* field_name_with_case(const char* name, size_t name_len, int upp
 }
 
 static PyObject*
+field_name_wsgi(const char *name, size_t name_len)
+{
+    // TODO: Cache common http header keys
+    PyObject *pyname = PyUnicode_New(name_len+5, 127);
+    if (pyname == NULL)
+        return NULL;
+
+    Py_UCS1 *data = PyUnicode_1BYTE_DATA(pyname);
+    data[0] = 'H';
+    data[1] = 'T';
+    data[2] = 'T';
+    data[3] = 'P';
+    data[4] = '_';
+    data += 5;
+
+    for (int i=0; i<name_len; i++) {
+        int c = name[i];
+        if (c < 0x21 || c > 0x7e) {
+            PyErr_SetString(PyExc_ValueError, "Invalid HTTP header");
+            Py_DECREF(pyname);
+            return NULL;
+        }
+        data[i] = toupper(c);
+    }
+    return pyname;
+}
+
+static PyObject*
 decode_field_name(const char* name, size_t name_len, int namecase)
 {
     switch (namecase) {
@@ -44,6 +75,8 @@ decode_field_name(const char* name, size_t name_len, int namecase)
         return field_name_with_case(name, name_len, 0);
     case 3:  // upper
         return field_name_with_case(name, name_len, 1);
+    case 4:  // wsgi
+        return field_name_wsgi(name, name_len);
     }
     assert(false);  // Should not come here
     PyErr_SetString(PyExc_RuntimeError, "Invalid field name case");
@@ -191,8 +224,7 @@ parse_headers(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "y#ii|i", &input, &input_size, &namecase, &valuedecode, &last_len))
         return NULL;
 
-    if (namecase < 0 || 3 < namecase) {
-        // TODO: support 4 - wsgi
+    if (namecase < 0 || 4 < namecase) {
         PyErr_SetString(PyExc_ValueError, "namecase should be 0~3");
         return NULL;
     }
